@@ -12,6 +12,7 @@
     <Version>0.1.0-alpha</Version>
     <Description>CLI for AgentEval — evaluate any OpenAI-compatible AI agent from the command line.</Description>
     <PackageTags>ai;agent;evaluation;cli;openai;ollama;llm;testing</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +24,10 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="AgentEval.Cli.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>
