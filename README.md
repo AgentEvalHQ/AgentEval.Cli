@@ -1,3 +1,7 @@
+<div align="center" style="margin-top:-60px;margin-bottom:-60px">
+  <img src="assets/AgentEvalCli.png" alt="AgentEval CLI" width="360" />
+</div>
+
 # AgentEval CLI
 
 [![NuGet](https://img.shields.io/nuget/vpre/AgentEval.Cli.svg)](https://www.nuget.org/packages/AgentEval.Cli)
