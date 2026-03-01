@@ -1,0 +1,30 @@
+<Project>
+  <PropertyGroup>
+    <!-- Shared compiler settings -->
+    <LangVersion>preview</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    
+    <!-- Generate documentation for all projects -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    
+    <!-- Common package metadata -->
+    <Authors>Jose Luis Latorre</Authors>
+    <Company>AgentEval</Company>
+    <RepositoryUrl>https://github.com/AgentEvalHQ/AgentEval.Cli</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/AgentEvalHQ/AgentEval.Cli</PackageProjectUrl>
+    <Copyright>Copyright © 2026 Jose Luis Latorre</Copyright>
+    
+    <!-- Package icon for NuGet -->
+    <PackageIcon>AgentEvalNugetLogoAE.png</PackageIcon>
+  </PropertyGroup>
+
+  <!-- Include logo for NuGet packages -->
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)assets\AgentEvalNugetLogoAE.png" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+</Project>

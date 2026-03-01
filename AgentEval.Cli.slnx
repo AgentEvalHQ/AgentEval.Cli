@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AgentEval.Cli/AgentEval.Cli.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AgentEval.Cli.Tests/AgentEval.Cli.Tests.csproj" />
+  </Folder>
+</Solution>

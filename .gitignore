@@ -416,3 +416,17 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# DocFX output
+docs/_site/
+docs/api/
+
+# Local NuGet output
+nupkgs/
+
+# Strategy documents (internal - do not publish)
+strategy/
+
+# MAF source reference (local only - not for distribution)
+/MAF/
+/MAFvnext/
