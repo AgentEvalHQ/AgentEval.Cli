@@ -32,11 +32,13 @@ internal static class EvalCommand
 
         // Endpoint (mutually exclusive group)
         var endpointOpt = new Option<string?>("--endpoint") { Description = "OpenAI-compatible API endpoint URL" };
-        var azureFlag = new Option<bool>("--azure") { Description = "Use Azure OpenAI (reads AZURE_OPENAI_* env vars)" };
+        var azureFlag = new Option<bool>("--azure") { Description = "Use Azure OpenAI (requires --endpoint and --deployment-name)" };
 
-        // Model
-        var modelOpt = new Option<string>("--model")
-            { Required = true, Description = "Model or deployment name" };
+        // Model / Deployment
+        var modelOpt = new Option<string?>("--model")
+            { Description = "Model name (required for OpenAI-compatible endpoints)" };
+        var deploymentNameOpt = new Option<string?>("--deployment-name")
+            { Description = "Azure OpenAI deployment name (required when using --azure)" };
 
         // Authentication
         var apiKeyOpt = new Option<string?>("--api-key")
@@ -81,6 +83,7 @@ internal static class EvalCommand
         command.Options.Add(endpointOpt);
         command.Options.Add(azureFlag);
         command.Options.Add(modelOpt);
+        command.Options.Add(deploymentNameOpt);
         command.Options.Add(apiKeyOpt);
         command.Options.Add(systemPromptOpt);
         command.Options.Add(systemPromptFileOpt);
@@ -104,7 +107,8 @@ internal static class EvalCommand
                 Dataset = parseResult.GetValue(datasetOpt)!,
                 Endpoint = parseResult.GetValue(endpointOpt),
                 Azure = parseResult.GetValue(azureFlag),
-                Model = parseResult.GetValue(modelOpt)!,
+                Model = parseResult.GetValue(modelOpt),
+                DeploymentName = parseResult.GetValue(deploymentNameOpt),
                 ApiKey = parseResult.GetValue(apiKeyOpt),
                 SystemPrompt = parseResult.GetValue(systemPromptOpt),
                 SystemPromptFile = parseResult.GetValue(systemPromptFileOpt),
@@ -145,8 +149,20 @@ internal static class EvalCommand
         // 1. Validate
         if (opts.Endpoint is null && !opts.Azure)
             throw new InvalidOperationException("Specify --endpoint <url> or --azure.");
+        if (opts.Azure && opts.Endpoint is null)
+            throw new InvalidOperationException(
+                "--azure requires --endpoint <url> (your Azure OpenAI resource endpoint, e.g. https://myresource.openai.azure.com/).");
+        if (opts.Azure && string.IsNullOrWhiteSpace(opts.DeploymentName))
+            throw new InvalidOperationException(
+                "--azure requires --deployment-name <name> (your Azure OpenAI deployment name).");
+        if (!opts.Azure && string.IsNullOrWhiteSpace(opts.Model))
+            throw new InvalidOperationException(
+                "--model is required when using --endpoint.");
         if (!opts.Dataset.Exists)
             throw new FileNotFoundException($"Dataset not found: {opts.Dataset.FullName}");
+
+        // Resolved identifier: deployment name for Azure, model name for OpenAI-compatible
+        var resolvedName = opts.Azure ? opts.DeploymentName! : opts.Model!;
 
         // 2. Resolve system prompt
         var systemPrompt = opts.SystemPrompt;
@@ -155,15 +171,15 @@ internal static class EvalCommand
 
         // 3. Create IChatClient → IStreamableAgent
         IChatClient chatClient = opts.Azure
-            ? EndpointFactory.CreateAzure(opts.Endpoint, opts.Model, opts.ApiKey)
-            : EndpointFactory.CreateOpenAICompatible(opts.Endpoint!, opts.Model, opts.ApiKey);
+            ? EndpointFactory.CreateAzure(opts.Endpoint, opts.DeploymentName!, opts.ApiKey)
+            : EndpointFactory.CreateOpenAICompatible(opts.Endpoint!, opts.Model!, opts.ApiKey);
 
         var chatOptions = new ChatOptions();
         if (opts.Temperature != 0f) chatOptions.Temperature = opts.Temperature;
         if (opts.MaxTokens.HasValue) chatOptions.MaxOutputTokens = opts.MaxTokens.Value;
 
         var agent = chatClient.AsEvaluableAgent(
-            name: opts.Model,
+            name: resolvedName,
             systemPrompt: systemPrompt,
             chatOptions: chatOptions);
 
@@ -175,7 +191,7 @@ internal static class EvalCommand
         // 5. Create harness (optionally with LLM judge)
         IChatClient? judgeClient = opts.JudgeEndpoint is not null
             ? EndpointFactory.CreateOpenAICompatible(
-                opts.JudgeEndpoint, opts.JudgeModel ?? opts.Model, opts.ApiKey)
+                opts.JudgeEndpoint, opts.JudgeModel ?? resolvedName, opts.ApiKey)
             : null;
         var harness = judgeClient is not null
             ? new MAFEvaluationHarness(judgeClient, verbose: opts.Verbose && !opts.Quiet)
@@ -183,7 +199,7 @@ internal static class EvalCommand
 
         // 6. Run evaluation
         if (!opts.Quiet)
-            ConsoleReporter.WriteHeader(opts.Model, opts.Dataset.Name, testCases.Count);
+            ConsoleReporter.WriteHeader(resolvedName, opts.Dataset.Name, testCases.Count);
 
         // Parse --metrics flag
         IReadOnlyList<string>? selectedMetrics = null;
@@ -201,7 +217,7 @@ internal static class EvalCommand
         {
             TrackTools = true,
             TrackPerformance = true,
-            ModelName = opts.Model,
+            ModelName = resolvedName,
             Verbose = opts.Verbose && !opts.Quiet,
             SelectedMetrics = selectedMetrics,
         };
@@ -215,8 +231,8 @@ internal static class EvalCommand
 
         // 7. Export
         var report = summary.ToEvaluationReport(
-            agentName: opts.Model,
-            modelName: opts.Model,
+            agentName: resolvedName,
+            modelName: resolvedName,
             endpoint: opts.Endpoint ?? "azure");
 
         // Directory format is handled exclusively via --output-dir, not the stream-based export path
@@ -312,7 +328,8 @@ internal sealed class EvalOptions
     public required FileInfo Dataset { get; init; }
     public string? Endpoint { get; init; }
     public bool Azure { get; init; }
-    public required string Model { get; init; }
+    public string? Model { get; init; }
+    public string? DeploymentName { get; init; }
     public string? ApiKey { get; init; }
     public string? Metrics { get; init; }
     public int Runs { get; init; } = 1;

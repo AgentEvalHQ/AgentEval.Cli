@@ -18,7 +18,7 @@ dotnet tool install -g AgentEval.Cli --prerelease
 
 ```bash
 agenteval init
-agenteval init --output my-tests.yaml
+agenteval init -o my-tests.yaml
 agenteval init --format json
 ```
 
@@ -26,7 +26,7 @@ agenteval init --format json
 
 ```bash
 # Against Azure OpenAI
-agenteval eval --azure --model gpt-4o --dataset agenteval.yaml
+agenteval eval --azure --endpoint https://myresource.openai.azure.com/ --deployment-name gpt-4o --dataset agenteval.yaml
 
 # Against OpenAI directly
 agenteval eval --endpoint https://api.openai.com/v1 --model gpt-4o --dataset agenteval.yaml
@@ -38,27 +38,72 @@ agenteval eval --endpoint http://localhost:11434/v1 --model llama3 --dataset age
 ### Stochastic evaluation (multi-run)
 
 ```bash
-agenteval eval --azure --model gpt-4o --dataset agenteval.yaml --runs 5 --threshold 0.9
+agenteval eval --azure --endpoint https://myresource.openai.azure.com/ --deployment-name gpt-4o --dataset agenteval.yaml --runs 5 --success-threshold 0.9
 ```
 
 ### Export results
 
 ```bash
-agenteval eval --azure --model gpt-4o --dataset agenteval.yaml --format json --output results/
+# Single file export
+agenteval eval --azure --endpoint https://myresource.openai.azure.com/ --deployment-name gpt-4o --dataset agenteval.yaml --format json -o results.json
+
+# Structured directory export (ADR-002 format)
+agenteval eval --azure --endpoint https://myresource.openai.azure.com/ --deployment-name gpt-4o --dataset agenteval.yaml --format directory --output-dir results/
 ```
 
 ### Red team security scanning
 
 ```bash
-agenteval redteam --azure --model gpt-4o --attacks all --intensity medium
-agenteval redteam --azure --model gpt-4o --attacks jailbreak,prompt-injection --format sarif
+# Run all 9 attack types
+agenteval redteam --azure --endpoint https://myresource.openai.azure.com/ --deployment-name gpt-4o --intensity moderate
+
+# Run specific attacks
+agenteval redteam --azure --endpoint https://myresource.openai.azure.com/ --deployment-name gpt-4o --attacks PromptInjection,Jailbreak --format sarif
 ```
 
 ### List available metrics and attacks
 
 ```bash
-agenteval list --metrics
-agenteval list --attacks
+agenteval list
+agenteval list --type metrics
+agenteval list --type attacks
+```
+
+## Authentication
+
+AgentEval supports two endpoint modes: **Azure OpenAI** (`--azure`) and **OpenAI-compatible** (`--endpoint`).
+
+### Azure OpenAI (`--azure`)
+
+The `--azure` flag uses `AzureOpenAIClient`. Both `--endpoint` and `--deployment-name` are **required**:
+
+| Setting | Flag | Env var fallback |
+|---------|------|------------------|
+| Endpoint | `--endpoint` *(required)* | — |
+| Deployment | `--deployment-name` *(required)* | — |
+| API Key | `--api-key` | `AZURE_OPENAI_API_KEY` |
+
+```bash
+# Explicit key
+agenteval eval --azure --endpoint https://myresource.openai.azure.com/ --deployment-name gpt-4o --dataset agenteval.yaml --api-key sk-...
+
+# Key from env var
+export AZURE_OPENAI_API_KEY=sk-...
+agenteval eval --azure --endpoint https://myresource.openai.azure.com/ --deployment-name gpt-4o --dataset agenteval.yaml
+```
+
+> **Note:** `--deployment-name` is the name you gave your model deployment in Azure AI Foundry, not the underlying model name.
+
+### OpenAI-compatible (`--endpoint`)
+
+For OpenAI, Ollama, Groq, vLLM, LM Studio, Together.ai, or any OpenAI-compatible API:
+
+```bash
+# OpenAI (set OPENAI_API_KEY or use --api-key)
+agenteval eval --endpoint https://api.openai.com/v1 --model gpt-4o --dataset agenteval.yaml --api-key sk-...
+
+# Local Ollama (no key needed)
+agenteval eval --endpoint http://localhost:11434/v1 --model llama3 --dataset agenteval.yaml
 ```
 
 ## Commands

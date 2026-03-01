@@ -34,19 +34,18 @@ internal static class EndpointFactory
 
     /// <summary>
     /// Creates an <see cref="IChatClient"/> for Azure OpenAI.
-    /// Reads from environment variables if endpoint/key not provided.
+    /// The endpoint and deployment name are required; the API key can be provided directly or via the AZURE_OPENAI_API_KEY env var.
     /// </summary>
-    /// <param name="endpoint">Optional endpoint URL (falls back to AZURE_OPENAI_ENDPOINT env var).</param>
-    /// <param name="model">The deployment name.</param>
+    /// <param name="endpoint">The Azure OpenAI resource endpoint URL (required).</param>
+    /// <param name="deploymentName">The Azure OpenAI deployment name (required).</param>
     /// <param name="apiKey">Optional API key (falls back to AZURE_OPENAI_API_KEY env var).</param>
     /// <returns>An <see cref="IChatClient"/> for Azure OpenAI.</returns>
     /// <exception cref="InvalidOperationException">Thrown when required endpoint or API key is missing.</exception>
-    public static IChatClient CreateAzure(string? endpoint, string model, string? apiKey)
+    public static IChatClient CreateAzure(string? endpoint, string deploymentName, string? apiKey)
     {
-        var resolvedEndpoint = endpoint
-            ?? Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT")
-            ?? throw new InvalidOperationException(
-                "Azure endpoint required. Set --endpoint or AZURE_OPENAI_ENDPOINT env var.");
+        if (string.IsNullOrWhiteSpace(endpoint))
+            throw new InvalidOperationException(
+                "Azure endpoint required. Specify --endpoint <url> with your Azure OpenAI resource URL.");
 
         var resolvedKey = apiKey
             ?? Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY")
@@ -54,9 +53,9 @@ internal static class EndpointFactory
                 "Azure API key required. Set --api-key or AZURE_OPENAI_API_KEY env var.");
 
         var client = new AzureOpenAIClient(
-            new Uri(resolvedEndpoint),
+            new Uri(endpoint),
             new AzureKeyCredential(resolvedKey));
 
-        return client.GetChatClient(model).AsIChatClient();
+        return client.GetChatClient(deploymentName).AsIChatClient();
     }
 }

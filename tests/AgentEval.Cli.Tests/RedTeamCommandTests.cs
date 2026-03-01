@@ -34,16 +34,17 @@ public class RedTeamCommandTests
     }
 
     [Fact]
-    public void Create_Has15Options()
+    public void Create_Has16Options()
     {
-        // endpoint, azure, model, api-key, system-prompt, attacks, intensity,
-        // fail-fast, max-probes, judge, judge-model, format, output, verbose, quiet = 15
+        // endpoint, azure, model, deployment-name, api-key, system-prompt, attacks, intensity,
+        // fail-fast, max-probes, judge, judge-model, format, output, verbose, quiet = 16
         var command = RedTeamCommand.Create();
-        Assert.Equal(15, command.Options.Count);
+        Assert.Equal(16, command.Options.Count);
     }
 
     [Theory]
     [InlineData("model")]
+    [InlineData("deployment-name")]
     [InlineData("attack")]
     [InlineData("intensity")]
     [InlineData("format")]
@@ -97,6 +98,37 @@ public class RedTeamCommandTests
             () => RedTeamCommand.ExecuteAsync(opts, CancellationToken.None));
         Assert.Contains("--endpoint", ex.Message);
         Assert.Contains("--azure", ex.Message);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_AzureWithoutDeploymentName_Throws()
+    {
+        var opts = new RedTeamOptions
+        {
+            Azure = true,
+            Endpoint = "https://test.openai.azure.com/",
+            Intensity = "moderate",
+            Format = "json",
+        };
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => RedTeamCommand.ExecuteAsync(opts, CancellationToken.None));
+        Assert.Contains("--deployment-name", ex.Message);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_NonAzureWithoutModel_Throws()
+    {
+        var opts = new RedTeamOptions
+        {
+            Endpoint = "http://localhost:11434/v1",
+            Intensity = "moderate",
+            Format = "json",
+        };
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => RedTeamCommand.ExecuteAsync(opts, CancellationToken.None));
+        Assert.Contains("--model", ex.Message);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -248,7 +280,6 @@ public class RedTeamCommandTests
     {
         var opts = new RedTeamOptions
         {
-            Model = "gpt-4o",
             Intensity = "moderate",
             Format = "markdown",
         };
@@ -256,6 +287,8 @@ public class RedTeamCommandTests
         Assert.False(opts.Azure);
         Assert.False(opts.FailFast);
         Assert.Equal(0, opts.MaxProbes);
+        Assert.Null(opts.Model);
+        Assert.Null(opts.DeploymentName);
         Assert.Null(opts.Attacks);
         Assert.Null(opts.SystemPrompt);
         Assert.Null(opts.Endpoint);

@@ -23,11 +23,13 @@ internal static class RedTeamCommand
 
         // Endpoint (mutually exclusive group)
         var endpointOpt = new Option<string?>("--endpoint") { Description = "OpenAI-compatible API endpoint URL" };
-        var azureFlag = new Option<bool>("--azure") { Description = "Use Azure OpenAI (reads AZURE_OPENAI_* env vars)" };
+        var azureFlag = new Option<bool>("--azure") { Description = "Use Azure OpenAI (requires --endpoint and --deployment-name)" };
 
-        // Model
-        var modelOpt = new Option<string>("--model")
-            { Required = true, Description = "Model or deployment name" };
+        // Model / Deployment
+        var modelOpt = new Option<string?>("--model")
+            { Description = "Model name (required for OpenAI-compatible endpoints)" };
+        var deploymentNameOpt = new Option<string?>("--deployment-name")
+            { Description = "Azure OpenAI deployment name (required when using --azure)" };
 
         // Authentication
         var apiKeyOpt = new Option<string?>("--api-key")
@@ -68,6 +70,7 @@ internal static class RedTeamCommand
         command.Options.Add(endpointOpt);
         command.Options.Add(azureFlag);
         command.Options.Add(modelOpt);
+        command.Options.Add(deploymentNameOpt);
         command.Options.Add(apiKeyOpt);
         command.Options.Add(systemPromptOpt);
         command.Options.Add(attacksOpt);
@@ -87,7 +90,8 @@ internal static class RedTeamCommand
             {
                 Endpoint = parseResult.GetValue(endpointOpt),
                 Azure = parseResult.GetValue(azureFlag),
-                Model = parseResult.GetValue(modelOpt)!,
+                Model = parseResult.GetValue(modelOpt),
+                DeploymentName = parseResult.GetValue(deploymentNameOpt),
                 ApiKey = parseResult.GetValue(apiKeyOpt),
                 SystemPrompt = parseResult.GetValue(systemPromptOpt),
                 Attacks = parseResult.GetValue(attacksOpt),
@@ -124,14 +128,26 @@ internal static class RedTeamCommand
         // 1. Validate
         if (opts.Endpoint is null && !opts.Azure)
             throw new InvalidOperationException("Specify --endpoint <url> or --azure.");
+        if (opts.Azure && opts.Endpoint is null)
+            throw new InvalidOperationException(
+                "--azure requires --endpoint <url> (your Azure OpenAI resource endpoint, e.g. https://myresource.openai.azure.com/).");
+        if (opts.Azure && string.IsNullOrWhiteSpace(opts.DeploymentName))
+            throw new InvalidOperationException(
+                "--azure requires --deployment-name <name> (your Azure OpenAI deployment name).");
+        if (!opts.Azure && string.IsNullOrWhiteSpace(opts.Model))
+            throw new InvalidOperationException(
+                "--model is required when using --endpoint.");
+
+        // Resolved identifier: deployment name for Azure, model name for OpenAI-compatible
+        var resolvedName = opts.Azure ? opts.DeploymentName! : opts.Model!;
 
         // 2. Create IChatClient → IEvaluableAgent
         IChatClient chatClient = opts.Azure
-            ? EndpointFactory.CreateAzure(opts.Endpoint, opts.Model, opts.ApiKey)
-            : EndpointFactory.CreateOpenAICompatible(opts.Endpoint!, opts.Model, opts.ApiKey);
+            ? EndpointFactory.CreateAzure(opts.Endpoint, opts.DeploymentName!, opts.ApiKey)
+            : EndpointFactory.CreateOpenAICompatible(opts.Endpoint!, opts.Model!, opts.ApiKey);
 
         var agent = chatClient.AsEvaluableAgent(
-            name: opts.Model,
+            name: resolvedName,
             systemPrompt: opts.SystemPrompt);
 
         // 3. Resolve attacks
@@ -166,7 +182,7 @@ internal static class RedTeamCommand
         // 5. Create ScanOptions
         IChatClient? judgeClient = opts.JudgeEndpoint is not null
             ? EndpointFactory.CreateOpenAICompatible(
-                opts.JudgeEndpoint, opts.JudgeModel ?? opts.Model, opts.ApiKey)
+                opts.JudgeEndpoint, opts.JudgeModel ?? resolvedName, opts.ApiKey)
             : null;
 
         var scanOptions = new ScanOptions
@@ -263,7 +279,8 @@ internal sealed class RedTeamOptions
 {
     public string? Endpoint { get; init; }
     public bool Azure { get; init; }
-    public required string Model { get; init; }
+    public string? Model { get; init; }
+    public string? DeploymentName { get; init; }
     public string? ApiKey { get; init; }
     public string? SystemPrompt { get; init; }
     public string? Attacks { get; init; }

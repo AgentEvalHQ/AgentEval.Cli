@@ -7,45 +7,40 @@
 
 ## 1. Implementation Plan Status — What's Done
 
-### Phase 1–3: Copy Files ✅ Complete
+### Phase 1–4: Repo Setup ✅ Complete
 
-All 9 source files, 7 test files, and infrastructure files are in place.
+All source files, test files, infrastructure, and adjustments are done.
+- Build: ✅ (net9.0 + net10.0)
+- Tests: ✅ (464/464 passed)
+- Pack: ✅ (nupkg with README + logo)
 
-### Phase 4: Manual Adjustments ✅ Complete
+### Phase 5: Clean Up Monorepo ✅ Complete
+
+Monorepo has been cleaned — CLI source and tests removed.
+
+### Community & Repo Files ✅ Complete
+
+| File | Status |
+|------|--------|
+| `CODE_OF_CONDUCT.md` | ✅ Created |
+| `CONTRIBUTING.md` | ✅ Created |
+| `SECURITY.md` | ✅ Created |
+| `AGENTS.md` | ✅ Created |
+| `CHANGELOG.md` | ✅ Created |
+| `.github/ISSUE_TEMPLATE/bug_report.md` | ✅ Created |
+| `.github/ISSUE_TEMPLATE/feature_request.md` | ✅ Created |
+| `.github/PULL_REQUEST_TEMPLATE.md` | ✅ Created |
+| `.github/workflows/ci.yml` | ✅ Created |
+| `.github/workflows/release.yml` | ✅ Created |
+
+### Release Infrastructure ✅ Complete
 
 | Task | Status |
 |------|--------|
-| 6.1 Convert ProjectReferences → PackageReference (`AgentEval 0.5.3-beta`) | ✅ Done |
-| 6.2 Adjust Directory.Build.props (repo URLs → AgentEvalHQ/AgentEval.Cli) | ✅ Done |
-| 6.3 Trim Directory.Packages.props (20+ → 8 CLI-only packages) | ✅ Done |
-| 6.4 Create solution file (`AgentEval.Cli.slnx`) | ✅ Done |
-| 6.5 Create CI workflow (`.github/workflows/ci.yml`) | ✅ Done |
-| 6.6 Verify Build & Tests Pass (464/464 passed, `dotnet pack` ✅) | ✅ Done |
-| 6.7 Update README.md | ✅ Done |
-
-### Phase 5: Clean Up Monorepo ⏳ Pending (separate repo)
-
-This phase happens on the **AgentEval monorepo**, not this repo. Steps:
-
-- [ ] Remove `src/AgentEval.Cli/` from monorepo
-- [ ] Remove `tests/AgentEval.Tests/Cli/` from monorepo
-- [ ] Remove CLI from `AgentEval.sln`
-- [ ] Remove CLI conditional reference from `AgentEval.Tests.csproj`
-- [ ] Verify monorepo still builds and tests pass
-
-### Minor Community Files Not Yet Created (Optional)
-
-These were listed in the target structure (Section 8) but are not blockers:
-
-| File | Priority | Notes |
-|------|----------|-------|
-| `CODE_OF_CONDUCT.md` | Low | Copy from monorepo or reference it |
-| `AGENTS.md` | Low | CLI-specific agent instructions |
-| `.github/ISSUE_TEMPLATE/bug_report.md` | Low | Create when public |
-| `.github/ISSUE_TEMPLATE/feature_request.md` | Low | Create when public |
-| `.github/PULL_REQUEST_TEMPLATE.md` | Low | Create when public |
-| `CONTRIBUTING.md` | Low | Create or reference monorepo |
-| `SECURITY.md` | Low | Reference monorepo |
+| `PackageReadmeFile` added to csproj | ✅ |
+| `PackageIcon` (AgentEvalNugetLogoAE.png) in nupkg | ✅ |
+| Release workflow (tag → build → test → NuGet push → GitHub Release) | ✅ |
+| Version set to `0.1.0-alpha` | ✅ |
 
 ---
 
@@ -277,47 +272,54 @@ jobs:
 
 Before the first public release:
 
-- [ ] **Decide version number** — suggest `0.1.0-beta` to match AgentEval's beta status
-- [ ] **Update `<Version>` in csproj** — currently `0.1.0-alpha`
-- [ ] **Add `<PackageReadmeFile>` to csproj** — NuGet warned about missing readme
-- [ ] **Create NuGet API key** scoped to `AgentEval.Cli` package
-- [ ] **Add `NUGET_API_KEY` secret** to the GitHub repo
-- [ ] **Create `.github/workflows/release.yml`** — automated release on tag push
-- [ ] **Test the nupkg locally** — install, run commands, uninstall
+- [x] **Decide version number** — `0.1.0-alpha`
+- [x] **Update `<Version>` in csproj** — set to `0.1.0-alpha`
+- [x] **Add `<PackageReadmeFile>` to csproj** — README.md included in nupkg
+- [x] **Add `<PackageIcon>` to nupkg** — AgentEvalNugetLogoAE.png included
+- [x] **Create `.github/workflows/release.yml`** — automated release on tag push
+- [x] **Create `CHANGELOG.md`** — documents all changes per version
+- [ ] **Create NuGet API key** scoped to `AgentEval.Cli` package (https://www.nuget.org/account/apikeys)
+- [ ] **Add `NUGET_API_KEY` secret** to the GitHub repo (Settings → Secrets → Actions)
 - [ ] **Push initial commit** to GitHub and verify CI is green
-- [ ] **Tag and release** — `git tag v0.1.0-beta && git push origin v0.1.0-beta`
-- [ ] **Verify on nuget.org** — package appears, install works
+- [ ] **Tag and release** — `git tag v0.1.0-alpha && git push origin v0.1.0-alpha`
+- [ ] **Verify on nuget.org** — package appears with logo + readme, install works
 
 ---
 
 ## 5. Remaining Work Items (Prioritized)
 
-### High Priority (Do Before First Release)
+### To Do Now (Manual Steps Required by Jose)
 
 | # | Task | Details |
 |---|------|---------|
-| 1 | Add PackageReadmeFile to csproj | NuGet warned about missing readme in the nupkg. Add `<PackageReadmeFile>README.md</PackageReadmeFile>` and include README.md in the pack |
-| 2 | Create release workflow | `.github/workflows/release.yml` for automated NuGet publishing on tag |
-| 3 | Push to GitHub & verify CI | Ensure the CI workflow runs green on main |
-| 4 | First release to NuGet.org | Tag `v0.1.0-beta`, push, verify |
+| 1 | Create NuGet API key | Go to https://www.nuget.org/account/apikeys → create key scoped to `AgentEval.Cli` |
+| 2 | Add GitHub secret | Repo → Settings → Secrets → Actions → New: `NUGET_API_KEY` |
+| 3 | Push to GitHub | `git add -A && git commit -m "Initial CLI repo setup" && git push` |
+| 4 | Verify CI is green | Check https://github.com/AgentEvalHQ/AgentEval.Cli/actions |
+| 5 | Tag first release | `git tag v0.1.0-alpha && git push origin v0.1.0-alpha` |
+| 6 | Verify NuGet publish | Check https://www.nuget.org/packages/AgentEval.Cli |
 
-### Medium Priority (Do Soon After)
-
-| # | Task | Details |
-|---|------|---------|
-| 5 | Clean up monorepo (Phase 5) | Remove CLI source + tests from AgentEvalHQ/AgentEval |
-| 6 | Community files | CODE_OF_CONDUCT.md, CONTRIBUTING.md, SECURITY.md |
-| 7 | GitHub repo settings | Branch protection rules, issue templates, PR template |
-| 8 | Cross-link repos | Add CLI link to main AgentEval README, update agenteval.dev |
-
-### Low Priority (Nice to Have)
+### Done ✅
 
 | # | Task | Details |
 |---|------|---------|
-| 9 | GitHub Releases with binaries (Option B) | Self-contained builds for non-.NET users |
-| 10 | AGENTS.md | CLI-specific agent instructions for Copilot |
-| 11 | Package manager distribution | winget, Homebrew — only if demand exists |
-| 12 | Docker image | Only if requested for CI/CD use cases |
+| ~~1~~ | ~~Add PackageReadmeFile to csproj~~ | ✅ README.md in nupkg |
+| ~~2~~ | ~~Add PackageIcon to nupkg~~ | ✅ AgentEvalNugetLogoAE.png |
+| ~~3~~ | ~~Create release workflow~~ | ✅ `.github/workflows/release.yml` |
+| ~~4~~ | ~~Create CHANGELOG.md~~ | ✅ Documents v0.1.0-alpha |
+| ~~5~~ | ~~Clean up monorepo~~ | ✅ CLI removed from AgentEval monorepo |
+| ~~6~~ | ~~Community files~~ | ✅ CODE_OF_CONDUCT, CONTRIBUTING, SECURITY, AGENTS.md |
+| ~~7~~ | ~~Issue templates + PR template~~ | ✅ `.github/ISSUE_TEMPLATE/` + PR template |
+
+### Future (Nice to Have)
+
+| # | Task | Details |
+|---|------|---------|
+| 1 | Cross-link repos | Add CLI link to main AgentEval README, update agenteval.dev |
+| 2 | GitHub Releases with binaries | Self-contained builds for non-.NET users |
+| 3 | Package manager distribution | winget, Homebrew — only if demand exists |
+| 4 | Docker image | Only if requested for CI/CD use cases |
+| 5 | Branch protection rules | Require PR reviews, CI checks on main |
 
 ---
 

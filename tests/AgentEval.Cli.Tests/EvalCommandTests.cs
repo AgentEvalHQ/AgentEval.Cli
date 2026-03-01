@@ -59,19 +59,20 @@ public class EvalCommandTests
     }
 
     [Fact]
-    public void Create_Has19Options()
+    public void Create_Has20Options()
     {
-        // dataset, endpoint, azure, model, api-key, system-prompt, system-prompt-file,
+        // dataset, endpoint, azure, model, deployment-name, api-key, system-prompt, system-prompt-file,
         // temperature, max-tokens, metrics, runs, success-threshold, judge, judge-model,
-        // format, output, output-dir, verbose, quiet = 19
+        // format, output, output-dir, verbose, quiet = 20
         var command = EvalCommand.Create();
-        Assert.Equal(19, command.Options.Count);
+        Assert.Equal(20, command.Options.Count);
     }
 
     [Theory]
     [InlineData("dataset")]
     [InlineData("endpoint")]
     [InlineData("model")]
+    [InlineData("deployment-name")]
     [InlineData("format")]
     [InlineData("metrics")]
     [InlineData("verbose")]
@@ -98,12 +99,13 @@ public class EvalCommandTests
         var opts = new EvalOptions
         {
             Dataset = new FileInfo("test.yaml"),
-            Model = "gpt-4o",
             Format = "json",
         };
 
         Assert.False(opts.Azure);
         Assert.Null(opts.Endpoint);
+        Assert.Null(opts.Model);
+        Assert.Null(opts.DeploymentName);
         Assert.Null(opts.ApiKey);
         Assert.Null(opts.Metrics);
         Assert.Equal(1, opts.Runs);
@@ -129,6 +131,7 @@ public class EvalCommandTests
             Endpoint = "http://localhost:11434/v1",
             Azure = false,
             Model = "llama3",
+            DeploymentName = null,
             ApiKey = "my-key",
             Metrics = "llm_relevance,code_tool_success",
             Runs = 5,
@@ -277,43 +280,59 @@ public class EvalCommandTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_AzureWithoutEndpointOrEnv_Throws()
+    public async Task ExecuteAsync_AzureWithoutDeploymentName_Throws()
     {
-        var savedEndpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT");
-        var savedKey = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY");
+        var path = CreateTempDataset("""
+            - id: test1
+              input: "Hello"
+              expectedOutput: "Hi"
+            """);
         try
         {
-            Environment.SetEnvironmentVariable("AZURE_OPENAI_ENDPOINT", null);
-            Environment.SetEnvironmentVariable("AZURE_OPENAI_API_KEY", null);
-
-            var path = CreateTempDataset("""
-                - id: test1
-                  input: "Hello"
-                  expectedOutput: "Hi"
-                """);
-            try
+            var opts = new EvalOptions
             {
-                var opts = new EvalOptions
-                {
-                    Dataset = new FileInfo(path),
-                    Azure = true,
-                    Model = "gpt-4o",
-                    Format = "json",
-                };
+                Dataset = new FileInfo(path),
+                Azure = true,
+                Endpoint = "https://test.openai.azure.com/",
+                Format = "json",
+            };
 
-                // Should fail at Azure endpoint resolution
-                await Assert.ThrowsAsync<InvalidOperationException>(
-                    () => EvalCommand.ExecuteAsync(opts, CancellationToken.None));
-            }
-            finally
-            {
-                File.Delete(path);
-            }
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => EvalCommand.ExecuteAsync(opts, CancellationToken.None));
+
+            Assert.Contains("--deployment-name", ex.Message);
         }
         finally
         {
-            Environment.SetEnvironmentVariable("AZURE_OPENAI_ENDPOINT", savedEndpoint);
-            Environment.SetEnvironmentVariable("AZURE_OPENAI_API_KEY", savedKey);
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_NonAzureWithoutModel_Throws()
+    {
+        var path = CreateTempDataset("""
+            - id: test1
+              input: "Hello"
+              expectedOutput: "Hi"
+            """);
+        try
+        {
+            var opts = new EvalOptions
+            {
+                Dataset = new FileInfo(path),
+                Endpoint = "http://localhost:11434/v1",
+                Format = "json",
+            };
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => EvalCommand.ExecuteAsync(opts, CancellationToken.None));
+
+            Assert.Contains("--model", ex.Message);
+        }
+        finally
+        {
+            File.Delete(path);
         }
     }
 
@@ -546,21 +565,18 @@ public class EvalCommandTests
     [Fact]
     public void EndpointFactory_Azure_MissingKey_Throws()
     {
-        var savedEndpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT");
         var savedKey = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY");
         try
         {
-            Environment.SetEnvironmentVariable("AZURE_OPENAI_ENDPOINT", "https://test.openai.azure.com/");
             Environment.SetEnvironmentVariable("AZURE_OPENAI_API_KEY", null);
 
             var ex = Assert.Throws<InvalidOperationException>(
-                () => EndpointFactory.CreateAzure(null, "gpt-4o", null));
+                () => EndpointFactory.CreateAzure("https://test.openai.azure.com/", "gpt-4o", null));
 
             Assert.Contains("key", ex.Message, StringComparison.OrdinalIgnoreCase);
         }
         finally
         {
-            Environment.SetEnvironmentVariable("AZURE_OPENAI_ENDPOINT", savedEndpoint);
             Environment.SetEnvironmentVariable("AZURE_OPENAI_API_KEY", savedKey);
         }
     }
@@ -575,43 +591,38 @@ public class EvalCommandTests
     }
 
     [Fact]
-    public void EndpointFactory_Azure_WithEnvVars_ReturnsClient()
+    public void EndpointFactory_Azure_WithEndpointAndKeyFromEnv_ReturnsClient()
     {
-        var savedEndpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT");
         var savedKey = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY");
         try
         {
-            Environment.SetEnvironmentVariable("AZURE_OPENAI_ENDPOINT", "https://test.openai.azure.com/");
             Environment.SetEnvironmentVariable("AZURE_OPENAI_API_KEY", "fake-key-from-env");
 
-            var client = EndpointFactory.CreateAzure(null, "gpt-4o", null);
+            // Endpoint is always explicit; only the API key falls back to env var
+            var client = EndpointFactory.CreateAzure("https://test.openai.azure.com/", "gpt-4o", null);
             Assert.NotNull(client);
         }
         finally
         {
-            Environment.SetEnvironmentVariable("AZURE_OPENAI_ENDPOINT", savedEndpoint);
             Environment.SetEnvironmentVariable("AZURE_OPENAI_API_KEY", savedKey);
         }
     }
 
     [Fact]
-    public void EndpointFactory_Azure_ExplicitOverridesEnvVars()
+    public void EndpointFactory_Azure_ExplicitKeyOverridesEnvVar()
     {
-        var savedEndpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT");
         var savedKey = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY");
         try
         {
-            Environment.SetEnvironmentVariable("AZURE_OPENAI_ENDPOINT", "https://env.openai.azure.com/");
             Environment.SetEnvironmentVariable("AZURE_OPENAI_API_KEY", "env-key");
 
-            // Explicit params should work (they override env vars)
+            // Explicit API key should override the env var
             var client = EndpointFactory.CreateAzure(
                 "https://explicit.openai.azure.com/", "gpt-4o", "explicit-key");
             Assert.NotNull(client);
         }
         finally
         {
-            Environment.SetEnvironmentVariable("AZURE_OPENAI_ENDPOINT", savedEndpoint);
             Environment.SetEnvironmentVariable("AZURE_OPENAI_API_KEY", savedKey);
         }
     }
