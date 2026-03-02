@@ -138,4 +138,9 @@ For discussions and questions, visit the [AgentEval Discussions](https://github.
 
 ## License
 
-[MIT](LICENSE) — Copyright © 2026 Jose Luis Latorre
+MIT License. See [LICENSE](LICENSE) for details.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=AgentEvalHQ/AgentEval.Cli&type=Date)](https://star-history.com/#AgentEvalHQ/AgentEval.Cli&Date)
+
