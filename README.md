@@ -127,8 +127,6 @@ agenteval eval --endpoint http://localhost:11434/v1 --model llama3 --dataset age
 ## Documentation
 
 - [AgentEval Documentation](https://agenteval.dev)
-- [CLI Reference](https://agenteval.dev/cli)
-- [Getting Started](https://agenteval.dev/getting-started.html)
 
 ## Contributing
 
