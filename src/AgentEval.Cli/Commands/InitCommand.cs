@@ -75,7 +75,7 @@ internal static class InitCommand
 
         await File.WriteAllTextAsync(fileName, template);
         Console.Error.WriteLine($"  Created {fileName} with sample test cases.");
-        Console.Error.WriteLine($"  Edit the file and run: agenteval eval --azure --model <model> --dataset {fileName}");
+        Console.Error.WriteLine($"  Edit the file and run: agenteval eval --endpoint <url> --model <model> --dataset {fileName}");
         return ExitCodes.Success;
     }
 
@@ -86,51 +86,55 @@ internal static class InitCommand
         # Each test case has:
         #   - id: Unique test identifier
         #   - input: The prompt sent to the agent
-        #   - expectedOutput: (optional) Expected response for comparison
+        #   - expected: (optional) Expected response for comparison
         #   - context: (optional) Retrieved context for RAG evaluation
         #   - groundTruth: (optional) Ground truth for faithfulness metrics
         #   - tags: (optional) Tags for filtering and grouping
         
-        - id: greeting_test
-          input: "Hello, how are you?"
-          expectedOutput: "A friendly greeting response"
-          tags: [basic, greeting]
+        examples:
+          - id: greeting_test
+            input: "Hello, how are you?"
+            expected: "A friendly greeting response"
+            tags: [basic, greeting]
         
-        - id: knowledge_test
-          input: "What is the capital of France?"
-          expectedOutput: "Paris"
-          context: "France is a country in Western Europe. Its capital is Paris."
-          groundTruth: "The capital of France is Paris."
-          tags: [knowledge, geography]
+          - id: knowledge_test
+            input: "What is the capital of France?"
+            expected: "Paris"
+            context:
+              - "France is a country in Western Europe. Its capital is Paris."
+            groundTruth: "The capital of France is Paris."
+            tags: [knowledge, geography]
         
-        - id: reasoning_test
-          input: "If a train travels 60mph for 2 hours, how far does it go?"
-          expectedOutput: "120 miles"
-          tags: [reasoning, math]
+          - id: reasoning_test
+            input: "If a train travels 60mph for 2 hours, how far does it go?"
+            expected: "120 miles"
+            tags: [reasoning, math]
         """;
 
     private static string GetJsonTemplate() => """
-        [
-          {
-            "id": "greeting_test",
-            "input": "Hello, how are you?",
-            "expectedOutput": "A friendly greeting response",
-            "tags": ["basic", "greeting"]
-          },
-          {
-            "id": "knowledge_test",
-            "input": "What is the capital of France?",
-            "expectedOutput": "Paris",
-            "context": "France is a country in Western Europe. Its capital is Paris.",
-            "groundTruth": "The capital of France is Paris.",
-            "tags": ["knowledge", "geography"]
-          },
-          {
-            "id": "reasoning_test",
-            "input": "If a train travels 60mph for 2 hours, how far does it go?",
-            "expectedOutput": "120 miles",
-            "tags": ["reasoning", "math"]
-          }
-        ]
+        {
+          "examples": [
+            {
+              "id": "greeting_test",
+              "input": "Hello, how are you?",
+              "expected": "A friendly greeting response",
+              "tags": ["basic", "greeting"]
+            },
+            {
+              "id": "knowledge_test",
+              "input": "What is the capital of France?",
+              "expected": "Paris",
+              "context": ["France is a country in Western Europe. Its capital is Paris."],
+              "groundTruth": "The capital of France is Paris.",
+              "tags": ["knowledge", "geography"]
+            },
+            {
+              "id": "reasoning_test",
+              "input": "If a train travels 60mph for 2 hours, how far does it go?",
+              "expected": "120 miles",
+              "tags": ["reasoning", "math"]
+            }
+          ]
+        }
         """;
 }

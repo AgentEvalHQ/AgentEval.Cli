@@ -99,10 +99,11 @@ public class InitCommandTests : IDisposable
         await InitCommand.ExecuteAsync("yaml", filePath, force: false);
 
         var content = await File.ReadAllTextAsync(filePath);
-        Assert.Contains("expectedOutput:", content);
+        Assert.Contains("expected:", content);
         Assert.Contains("context:", content);
         Assert.Contains("groundTruth:", content);
         Assert.Contains("tags:", content);
+        Assert.Contains("examples:", content);
         Assert.Contains("AgentEval Evaluation Dataset", content);
     }
 
@@ -135,7 +136,7 @@ public class InitCommandTests : IDisposable
         var content = await File.ReadAllTextAsync(filePath);
         Assert.Contains("greeting_test", content);
         Assert.Contains("\"input\":", content);
-        Assert.Contains("\"expectedOutput\":", content);
+        Assert.Contains("\"expected\":", content);
     }
 
     [Fact]
@@ -145,10 +146,11 @@ public class InitCommandTests : IDisposable
         await InitCommand.ExecuteAsync("json", filePath, force: false);
         var content = await File.ReadAllTextAsync(filePath);
 
-        // Should parse as valid JSON array
+        // Should parse as valid JSON object with examples array
         var doc = System.Text.Json.JsonDocument.Parse(content);
-        Assert.Equal(System.Text.Json.JsonValueKind.Array, doc.RootElement.ValueKind);
-        Assert.Equal(3, doc.RootElement.GetArrayLength());
+        Assert.Equal(System.Text.Json.JsonValueKind.Object, doc.RootElement.ValueKind);
+        Assert.True(doc.RootElement.TryGetProperty("examples", out var examples));
+        Assert.Equal(3, examples.GetArrayLength());
     }
 
     [Fact]
@@ -159,7 +161,8 @@ public class InitCommandTests : IDisposable
         var content = await File.ReadAllTextAsync(filePath);
 
         var doc = System.Text.Json.JsonDocument.Parse(content);
-        foreach (var item in doc.RootElement.EnumerateArray())
+        var examples = doc.RootElement.GetProperty("examples");
+        foreach (var item in examples.EnumerateArray())
         {
             Assert.True(item.TryGetProperty("id", out _), "Each test case must have an 'id'");
             Assert.True(item.TryGetProperty("input", out _), "Each test case must have an 'input'");
