@@ -5,6 +5,15 @@ All notable changes to AgentEval CLI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0-alpha] - 2026-03-05
+
+### Changed
+
+- Upgraded AgentEval dependency from 0.5.4-beta to 0.6.0-beta
+- Now built on MAF (Microsoft.Extensions.AI) 1.0.0-rc3
+
+[0.2.0-alpha]: https://github.com/AgentEvalHQ/AgentEval.Cli/releases/tag/v0.2.0-alpha
+
 ## [0.1.0-alpha] - 2026-03-01
 
 ### Added
@@ -21,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Multiple attack types and intensity levels
   - SARIF, JSON, Markdown, JUnit export formats
 - Rich console output with colored results and progress
-- Depends on AgentEval NuGet package 0.5.3-beta
+- Depends on AgentEval NuGet package 0.5.3-beta (MAF 1.0.0-rc2)
 
 ### Infrastructure
 

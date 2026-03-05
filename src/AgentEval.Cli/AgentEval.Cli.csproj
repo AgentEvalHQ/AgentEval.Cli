@@ -9,7 +9,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>agenteval</ToolCommandName>
     <PackageId>AgentEval.Cli</PackageId>
-    <Version>0.1.0-alpha</Version>
+    <Version>0.2.0-alpha</Version>
     <Description>CLI for AgentEval — evaluate any OpenAI-compatible AI agent from the command line.</Description>
     <PackageTags>ai;agent;evaluation;cli;openai;ollama;llm;testing</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>

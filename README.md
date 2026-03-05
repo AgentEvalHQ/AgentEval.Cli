@@ -4,9 +4,13 @@
 
 # AgentEval CLI
 
-[![NuGet](https://img.shields.io/nuget/vpre/AgentEval.Cli.svg)](https://www.nuget.org/packages/AgentEval.Cli)
-[![CI](https://github.com/AgentEvalHQ/AgentEval.Cli/actions/workflows/ci.yml/badge.svg)](https://github.com/AgentEvalHQ/AgentEval.Cli/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+<p align="center">
+  <a href="https://www.nuget.org/packages/AgentEval.Cli"><img src="https://img.shields.io/nuget/vpre/AgentEval.Cli.svg" alt="NuGet" /></a>
+  <a href="https://github.com/AgentEvalHQ/AgentEval.Cli/actions/workflows/ci.yml"><img src="https://github.com/AgentEvalHQ/AgentEval.Cli/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
+  <img src="https://img.shields.io/badge/MAF-1.0.0--rc3-blueviolet" alt="MAF 1.0.0-rc3" />
+  <img src="https://img.shields.io/badge/.NET-9.0%20|%2010.0-512BD4" alt=".NET 9.0 | 10.0" />
+</p>
 
 Command-line interface for [AgentEval](https://github.com/AgentEvalHQ/AgentEval) — evaluate any OpenAI-compatible AI agent from the terminal.
 
@@ -15,6 +19,13 @@ Command-line interface for [AgentEval](https://github.com/AgentEvalHQ/AgentEval)
 ```bash
 dotnet tool install -g AgentEval.Cli --prerelease
 ```
+
+### Compatibility
+
+| AgentEval CLI | AgentEval | MAF | .NET |
+|---------------|-----------|-----|------|
+| 0.2.0-alpha | 0.6.0-beta | 1.0.0-rc3 | 9.0, 10.0 |
+| 0.1.0-alpha | 0.5.3-beta | 1.0.0-rc2 | 9.0, 10.0 |
 
 ## Quick Start
 
@@ -121,8 +132,9 @@ agenteval eval --endpoint http://localhost:11434/v1 --model llama3 --dataset age
 
 ## Requirements
 
-- .NET 9.0 or later
+- .NET 9.0 or 10.0
 - An AI agent endpoint (Azure OpenAI, OpenAI, Ollama, or any OpenAI-compatible API)
+- Built on [Microsoft.Extensions.AI](https://github.com/dotnet/extensions) (MAF 1.0.0-rc3)
 
 ## Documentation
 
